@@ -2,7 +2,7 @@
 
 This folder contains a web server with vars example of a [Terraform](https://www.terraform.io/) file on AWS (Amazon Web Services).
 
-This Terraform file deploys a single web server on AWS (Amazon Web Services). The web server returns "Hello, World" for the URL `/` listening on port 8080, which is defined as a variable.
+This Terraform file deploys a single web server on AWS (Amazon Web Services). The web server returns "Hello, World" for the URL `/` listening on port 80, which is defined as a variable.
 
 ## Requirements
 
@@ -95,7 +95,7 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
 
 * Modify server port configuration.
 
-  The web server is listening on port 8080, which is defined as an input variable `server_port` in `vars.tf` file.
+  The web server is listening on port 80, which is defined as an input variable `server_port` in `vars.tf` file.
 
   If you want to modify the server port you will be able to do it in several ways:
 
@@ -116,7 +116,7 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
     When Terraform runs it will look for a file called `terraform.tfvars`. You can populate this file with variable values that will be loaded when Terraform runs. An example for the content of the `terraform.tfvars` file:
 
     ```bash
-    server_port = "8080"
+    server_port = "80"
     ```
 
   * Loading variables from environment variables.
@@ -164,10 +164,10 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
   * From the command line:
 
     ```bash
-    curl http://<server_public_ip>:8080/
+    curl http://<server_public_ip>
     ```
 
-  * Or using your browser: `http://<server_public_ip>:8080/`
+  * Or using your browser: `http://<server_public_ip>`
 
   You should get a `Hello, World` response message.
 
