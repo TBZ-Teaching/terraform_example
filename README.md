@@ -19,7 +19,21 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
 
   Setting your credentials for use by Terraform can be done in a number of ways, but here are the recommended approaches:
 
+  * Using the AWS CLI (Recommended for standard accounts)
+    
+    If you have the [AWS CLI](https://aws.amazon.com/cli/) installed, you can use the `configure` command to set up your credentials file automatically. This is easier than creating the file manually.
+
+    ```bash
+    aws configure
+    ```
+    
+    Follow the prompts to input your Access Key ID, Secret Access Key, and default region.
+
   * The default credentials file
+
+    **Setup:** If the `.aws` folder does not exist, create it manually or via terminal:
+    *   **Linux/macOS:** `mkdir -p ~/.aws`
+    *   **Windows:** `mkdir %USERPROFILE%\.aws`
   
     Set credentials in the AWS credentials profile file on your local system, located at:
 
