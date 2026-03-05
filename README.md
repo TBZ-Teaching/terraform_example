@@ -9,7 +9,7 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
 * You must have [Terraform](https://www.terraform.io/) installed on your computer.
 * You must have an [AWS (Amazon Web Services)](http://aws.amazon.com/) account.
 * It uses the Terraform AWS Provider that interacts with the many resources supported by AWS through its APIs.
-* This code was written for Terraform 0.10.x.
+* This code is compatible with Terraform >= 1.2.0.
 
 ## Using the code
 
@@ -36,6 +36,19 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
     ```
     Substitute your own AWS credentials values for the values `<your_access_key_id>` and `<your_secret_access_key>`.
 
+  * AWS Academy Learner Lab (Temporary Credentials)
+
+    If you are using AWS Academy Learner Lab, copy the credentials from the **AWS Details** button (select **Show** next to AWS CLI).
+    
+    Paste them into your `~/.aws/credentials` file. Because these are temporary credentials, you must include the session token:
+
+    ```bash
+    [default]
+    aws_access_key_id = <your_access_key_id>
+    aws_secret_access_key = <your_secret_access_key>
+    aws_session_token = <your_session_token>
+    ```
+
   * Environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
   
     Set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables.
@@ -45,6 +58,8 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
     ```bash
     export AWS_ACCESS_KEY_ID=<your_access_key_id>
     export AWS_SECRET_ACCESS_KEY=<your_secret_access_key>
+    # If using temporary credentials (like AWS Academy Learner Lab), also set:
+    export AWS_SESSION_TOKEN=<your_session_token>
     ```
 
     To set these variables on Windows, use `set`:
@@ -52,6 +67,8 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
     ```bash
     set AWS_ACCESS_KEY_ID=<your_access_key_id>
     set AWS_SECRET_ACCESS_KEY=<your_secret_access_key>
+    :: If using temporary credentials (like AWS Academy Learner Lab), also set:
+    set AWS_SESSION_TOKEN=<your_session_token>
     ```
 
 * Initialize working directory.
@@ -100,15 +117,17 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
 
     Change the value of the `default` attribute of `server_port` input variable in `vars.tf` file.
 
-* Validate the changes.
+    **Note:** If multiple methods are used, the variable precedence order is: Command line flags > `.tfvars` file > Environment variables > Defaults.
 
-  Run command:
+* Plan the deployment.
+
+  You can verify what resources will be created by running:
 
   ```bash
   terraform plan
   ```
 
-* Deploy the changes.
+* Deploy the Infrastructure.
 
   Run command:
 
@@ -116,17 +135,25 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
   terraform apply
   ```
 
+  (Type `yes` to confirm)
+
 * Test the web server.
 
-   You can test it in two ways:
+  Get the public IP address of the server:
+
+  ```bash
+  terraform output public_ip
+  ```
+
+  Use the output IP to test the server. (Replace `<server_public_ip>` with the actual address):
   
-  * Running this command:
+  * From the command line:
 
     ```bash
     curl http://<server_public_ip>:8080/
     ```
 
-  * Writing in your browser this URL: `http://<server_public_ip>:8080/`
+  * Or using your browser: `http://<server_public_ip>:8080/`
 
   You should get a `Hello, World` response message.
 
@@ -137,3 +164,5 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
   ```bash
   terraform destroy
   ```
+
+  (Type `yes` to confirm)
