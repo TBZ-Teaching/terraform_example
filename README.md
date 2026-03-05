@@ -169,7 +169,7 @@ This Terraform file deploys a single web server on AWS (Amazon Web Services). Th
 
   * Or using your browser: `http://<server_public_ip>`
 
-  You should get a `Hello, World` response message.
+  You should get a `Hello, Modul 300` response message.
 
 * Clean up the resources created.
 
