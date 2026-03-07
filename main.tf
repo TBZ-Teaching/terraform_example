@@ -30,12 +30,10 @@ resource "aws_instance" "example" {
   
   user_data = <<-EOF
               #!/bin/bash
-              echo "Hello, Modul 300" > index.html
+              echo "Hello World" > index.html
               nohup python3 -m http.server "${var.server_port}" &
               EOF
-			  
   tags = {
-    Name = "terraform-example"
+    Name = var.instance_name
   }
-
 }
