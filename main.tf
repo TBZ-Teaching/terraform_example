@@ -5,7 +5,8 @@ provider "aws" {
 
 # Create a Security Group for an EC2 instance 
 resource "aws_security_group" "instance" {
-  name = "terraform-example-instance"
+name = "${var.instance_name}-sg"
+description = "Allow HTTP traffic on port ${var.server_port}"
   
   ingress {
     from_port	  = "${var.server_port}"
@@ -27,11 +28,12 @@ resource "aws_instance" "example" {
   ami			                = "ami-0071174ad8cbb9e17" # Ubuntu 24.04 LTS (Noble Numbat)
   instance_type           = "t2.micro"
   vpc_security_group_ids  = ["${aws_security_group.instance.id}"]
+  user_data_replace_on_change = true
   
   user_data = <<-EOF
               #!/bin/bash
               echo "Hello World" > index.html
-              nohup python3 -m http.server "${var.server_port}" &
+              nohup python3 -m http.server "${var.server_port}" > index.log 2>&1 &
               EOF
   tags = {
     Name = var.instance_name

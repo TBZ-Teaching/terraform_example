@@ -55,59 +55,42 @@ terraform init
 ```
 Dies lädt den "AWS Provider" herunter. Ein Ordner `.terraform` wird erstellt.
 
-## Aufgabe 3: Variablen verstehen & nutzen
-
-*(Hinweis für Eilige: Wähle nur **eine** der folgenden Methoden 3.1 bis 3.3 aus!)*
+## Aufgabe 3: Variablen nutzen (terraform.tfvars)
 
 Wir wollen dem Server einen individuellen Namen geben, damit wir ihn in der AWS Konsole leichter finden.
 Dazu nutzen wir die Variable `instance_name`.
 
-### 3.1 CLI Flag (Die "Mal eben schnell"-Methode)
-Wir überschreiben den Namen direkt beim Befehl:
+Die sauberste Methode, Variablen dauerhaft zu setzen, ist eine Datei namens `terraform.tfvars`.
+Terraform liest diese Datei automatisch ein.
+
+1.  Nutze die bestehende Datei `terraform.tfvars` im Projektordner.
+2.  Lege deinen Wunschnamen und einen eigenen Port (z.B. 8080 oder 8081) fest:
+
+    ```hcl
+    instance_name = "Mein-Web-Server"
+    server_port   = 8081
+    ```
+
+3.  Führe `terraform plan` aus.
+    * Beobachte die Ausgabe: Findest du die Zeile `+ Name = "Mein-Web-Server"` und den neuen Port?
+
+### Zusatz-Info: Variablen überschreiben
+Falls du mal schnell etwas testen willst, ohne die Datei zu ändern, kannst du Variablen auch direkt beim Befehl überschreiben. Das hat Vorrang vor der Datei:
 
 ```bash
-terraform plan -var 'instance_name=Mein-Test-Server'
+terraform plan -var 'instance_name=Test-Server-Temporary'
 ```
-* Beobachte die Ausgabe: Findest du die Zeile `+ Name = "Mein-Test-Server"`?
-
-### 3.2 Environment Variable (Die "Pipeline"-Methode)
-Terraform liest automatisch Variablen, die mit `TF_VAR_` beginnen.
-
-```bash
-# Linux/Mac
-export TF_VAR_instance_name=Server-Aus-Env-Var
-
-# Windows
-set TF_VAR_instance_name=Server-Aus-Env-Var
-
-# Testen
-terraform plan
-```
-* Beobachte: Wird der neue Name übernommen?
-
-### 3.3 tfvars Datei (Die "Persistente"-Methode)
-Erstelle eine Datei namens `terraform.tfvars` im selben Ordner:
-
-```hcl
-instance_name = "Server-Aus-Datei"
-```
-Führe erneut `terraform plan` aus.
-* Frage: Welche Methode gewinnt? Env Var oder Datei?
-
-### 3.4 Default Wert (Der "Fallback")
-Schaue in die Datei `vars.tf`. Dort steht ein `default` Wert.
-Dies wird genutzt, wenn nichts anderes definiert ist.
 
 **Merke die Rangfolge:**
-CLI Flag > tfvars Datei > Environment Variable > Default Wert
+CLI Flag (`-var`) > tfvars Datei > Environment Variable (`TF_VAR_...`) > Default Wert (in `vars.tf`)
 
 ## Aufgabe 4: Deployment
 
-Entscheide dich für deinen Wunsch-Namen (z.B. "Mein-Erster-Server").
+Da wir unsere Wunsch-Konfiguration nun in der `terraform.tfvars` Datei haben, ist das Deployment einfach.
 
 1.  Führe den Plan aus:
     ```bash
-    terraform plan -var 'instance_name=Mein-Erster-Server' -out=meinplan
+    terraform plan -out=meinplan
     ```
 2.  Wende die Änderungen an:
     ```bash
@@ -125,8 +108,6 @@ Auch testen wir kurz die Website:
 terraform output public_ip
 ```
 Kopiere die IP und öffne sie im Browser (Standard Port 80, also einfach die IP).
-
----
 
 ## Aufgabe 6: Der Chaos-Test (Self-Healing)
 
@@ -146,32 +127,26 @@ Terraform überwacht den Zustand deiner Infrastruktur. Was passiert, wenn jemand
     ```
     Der Server ist wieder da! Das nennt man **Self-Healing Infrastructure**.
 
-## Aufgabe 7: Code erweitern (Optional / Für Schnelle)
+## Aufgabe 7: Code erweitern
 
-Wir wollen nicht nur die IP-Adresse, sondern auch wissen, in welchem Rechenzentrum (Availability Zone) unser Server steht.
+Wir wollen nicht nur den Port, sondern auch den Text auf der Webseite ("Hello World") konfigurieren können.
 
-1.  Öffne die Datei `outputs.tf` in VS Code.
-2.  Füge folgenden Block hinzu:
+1.  Definiere eine neue Variable `server_text` in der `vars.tf` (Setze einen Default-Wert).
+2.  Gehe in die `main.tf` zum `user_data` Skript.
+3.  Ersetze den statischen Text `"Hello World"` durch die Variable `${var.server_text}`.
+4.  Setze deinen Wunsch-Text in der `terraform.tfvars`:
     ```hcl
-    output "availability_zone" {
-      value = aws_instance.example.availability_zone
-      description = "Das Rechenzentrum, in dem der Server steht"
-    }
+    server_text = "Hallo von meinem Modul 300 Server!"
     ```
-3.  Wende die Änderung an:
-    ```bash
-    terraform apply
-    ```
-    (Bestätige mit `yes`).
-4.  **Ergebnis:** Du siehst am Ende nun zwei Outputs (IP und Zone).
+5.  Führe `terraform apply` aus. Prüfe die Webseite!
 
 ## Aufgabe 8: Denkanstösse (Pipeline & CI/CD)
 
 Stell dir vor, du führst das nicht auf deinem Laptop aus, sondern automatisch in einer Pipeline (GitLab CI / GitHub Actions). Diskutiere folgende Fragen:
 
-1.  **Das Gedächtnis-Problem:** Wenn der Pipeline-Container nach dem Job gelöscht wird, wo bleibt dann deine `terraform.tfstate` Datei? (Stichwort: Remote Backend / S3).
-2.  **Die Sicherheit:** Wie kommen deine AWS Keys in die Pipeline, ohne dass sie im Code stehen? (Stichwort: Secrets / Environment Variables).
-3.  **Die Gefahr:** Was passiert, wenn zwei Kollegen gleichzeitig einen Commit pushen und zwei Pipelines gleichzeitig `terraform apply` ausführen? (Stichwort: State Locking).
+1.  **Das Gedächtnis-Problem:** Wenn der Pipeline-Container nach dem Job gelöscht wird, wo bleibt dann deine `terraform.tfstate` Datei?
+2.  **Die Sicherheit:** Wie kommen deine AWS Keys in die Pipeline, ohne dass sie im Code stehen?
+3.  **Die Gefahr:** Was passiert, wenn zwei Kollegen gleichzeitig einen Commit pushen und zwei Pipelines gleichzeitig `terraform apply` ausführen?
 
 ## Aufgabe 9: Aufräumen
 
