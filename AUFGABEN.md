@@ -55,6 +55,22 @@ terraform init
 ```
 Dies lädt den "AWS Provider" herunter. Ein Ordner `.terraform` wird erstellt.
 
+**Hinweis (Remote State via S3 Backend):**
+Wenn du den State in S3 ablegen willst (für CI/CD empfohlen), musst du zuerst den Bootstrap-Stack ausführen und danach das Backend beim Init konfigurieren.
+
+```bash
+cd bootstrap
+terraform init
+terraform apply
+
+cd ..
+terraform init \
+    -backend-config="bucket=<DEIN_BUCKET>" \
+    -backend-config="key=state/main/terraform.tfstate" \
+    -backend-config="region=us-east-1" \
+    -backend-config="dynamodb_table=<DEIN_LOCK_TABLE>"
+```
+
 ## Aufgabe 3: Variablen nutzen (terraform.tfvars)
 
 Wir wollen dem Server einen individuellen Namen geben, damit wir ihn in der AWS Konsole leichter finden.
