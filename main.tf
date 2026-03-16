@@ -5,14 +5,14 @@ provider "aws" {
 
 # Create a Security Group for an EC2 instance 
 resource "aws_security_group" "instance" {
-name = "${var.instance_name}-sg"
-description = "Allow HTTP traffic on port ${var.server_port}"
-  
+  name        = "${var.instance_name}-sg"
+  description = "Allow HTTP traffic on port ${var.server_port}"
+
   ingress {
-    from_port	  = "${var.server_port}"
-    to_port	    = "${var.server_port}"
-    protocol	  = "tcp"
-    cidr_blocks	= ["0.0.0.0/0"]
+    from_port   = var.server_port
+    to_port     = var.server_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -25,11 +25,11 @@ description = "Allow HTTP traffic on port ${var.server_port}"
 
 # Create an EC2 instance
 resource "aws_instance" "example" {
-  ami			                = "ami-0071174ad8cbb9e17" # Ubuntu 24.04 LTS (Noble Numbat)
-  instance_type           = "t2.micro"
-  vpc_security_group_ids  = ["${aws_security_group.instance.id}"]
+  ami                         = "ami-0071174ad8cbb9e17" # Ubuntu 24.04 LTS (Noble Numbat)
+  instance_type               = "t2.micro"
+  vpc_security_group_ids      = ["${aws_security_group.instance.id}"]
   user_data_replace_on_change = true
-  
+
   user_data = <<-EOF
               #!/bin/bash
               echo "Hello World" > index.html

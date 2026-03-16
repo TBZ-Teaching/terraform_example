@@ -19,4 +19,53 @@ Dies ist ein Beispiel-Projekt für das Modul **Infrastructure as Code**. Es zeig
 *   Terraform >= 1.2.0
 *   AWS Account & Access Keys
 
+## GitHub Actions (Terraform Plan/Apply)
+
+Dieses Repo enthält GitHub Workflows für:
+
+*   **terraform-plan**: läuft automatisch bei Pull Requests (und Push auf `main`) und macht `fmt`, `init`, `validate`, `plan`.
+	*   Hinweis: Der Plan läuft mit `-refresh=false`, damit er **keine AWS Credentials** braucht.
+*   **terraform-apply**: **manuell** auslösbar (Workflow Dispatch) und führt `plan` + `apply` aus.
+
+### Benötigte Secrets
+
+Lege in GitHub unter **Settings → Secrets and variables → Actions → Secrets** folgende Secrets an:
+
+*   `AWS_ACCESS_KEY_ID`
+*   `AWS_SECRET_ACCESS_KEY`
+*   `AWS_SESSION_TOKEN` (optional, z.B. AWS Academy)
+*   `AWS_REGION` (optional, Default ist `us-east-1`)
+
+### Empfohlen: State in S3 persistieren (mit Bootstrap)
+
+Da GitHub Runner nach dem Job gelöscht werden, ist ein persistenter State wichtig, damit Terraform zuverlässig weiterarbeiten kann.
+
+In diesem Repo gibt es dafür einen **Bootstrap-Stack** unter `bootstrap/`, der einen S3 Bucket (und optional eine DynamoDB-Tabelle für Locks) erstellt.
+
+1.  Einmalig lokal bootstrap ausführen:
+
+		```bash
+		cd bootstrap
+		terraform init
+		terraform apply
+		```
+
+2.  Danach im Root-Verzeichnis das S3 Backend nutzen (GitHub Actions macht das automatisch, lokal geht z.B. so):
+
+		```bash
+		terraform init \
+			-backend-config="bucket=<DEIN_BUCKET>" \
+			-backend-config="key=state/main/terraform.tfstate" \
+			-backend-config="region=us-east-1" \
+			-backend-config="dynamodb_table=<DEIN_LOCK_TABLE>"
+		```
+
+Für GitHub Actions werden folgende Secrets verwendet:
+
+*   `TF_STATE_BUCKET` (Name des S3 Buckets)
+*   `TF_LOCK_TABLE` (optional, DynamoDB Tabelle für State Locks)
+*   optionaler Input `state_key` beim manuellen Starten des Apply-Workflows (Default: `state/<branch>/terraform.tfstate`)
+
+Ohne `TF_STATE_BUCKET` kann Terraform in GitHub Actions den State nicht persistent halten.
+
 Viel Erfolg!

@@ -1,0 +1,87 @@
+name: terraform-apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      auto_approve:
+        description: "Run apply with -auto-approve"
+        required: true
+        default: true
+        type: boolean
+      state_key:
+        description: "Optional: S3 key for terraform.tfstate (requires TF_STATE_BUCKET secret)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-apply-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+    steps:
+      - name: Require remote state bucket
+        run: |
+          set -euo pipefail
+          if [[ -z "${{ secrets.TF_STATE_BUCKET }}" ]]; then
+            echo "TF_STATE_BUCKET secret is required (S3 backend)."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials (static keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        env:
+          BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+          KEY: ${{ inputs.state_key != '' && inputs.state_key || format('state/{0}/terraform.tfstate', github.ref_name) }}
+          LOCK_TABLE: ${{ secrets.TF_LOCK_TABLE }}
+        run: |
+          set -euo pipefail
+          init_args=(
+            "-backend-config=bucket=$BUCKET"
+            "-backend-config=key=$KEY"
+            "-backend-config=region=${AWS_REGION}"
+          )
+          if [[ -n "$LOCK_TABLE" ]]; then
+            init_args+=("-backend-config=dynamodb_table=$LOCK_TABLE")
+          fi
+          terraform init -input=false "${init_args[@]}"
+
+      - name: Terraform plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Terraform apply
+        env:
+          AUTO_APPROVE: ${{ inputs.auto_approve }}
+        run: |
+          set -euo pipefail
+          if [[ "$AUTO_APPROVE" == "true" ]]; then
+            terraform apply -no-color -auto-approve tfplan
+          else
+            terraform apply -no-color tfplan
+          fi
