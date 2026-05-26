@@ -19,6 +19,26 @@ Dies ist ein Beispiel-Projekt für das Modul **Infrastructure as Code**. Es zeig
 *   Terraform >= 1.2.0
 *   AWS Account & Access Keys
 
+## State-Strategie (lokal zuerst, S3 später)
+
+Dieses Projekt kann zuerst mit lokalem State verwendet werden:
+
+```bash
+terraform init -backend=false
+```
+
+Danach arbeitet Terraform mit `terraform.tfstate` im Projektordner.
+
+Sobald dein S3 Bucket vorhanden ist (z.B. via `bootstrap/`), kannst du den lokalen State nach S3 migrieren:
+
+```bash
+terraform init \
+	-migrate-state \
+	-backend-config="bucket=<DEIN_BUCKET>" \
+	-backend-config="key=state/main/terraform.tfstate" \
+	-backend-config="region=us-east-1"
+```
+
 ## GitHub Actions (Terraform Plan/Apply)
 
 Dieses Repo enthält GitHub Workflows für:
@@ -40,7 +60,7 @@ Lege in GitHub unter **Settings → Secrets and variables → Actions → Secret
 
 Da GitHub Runner nach dem Job gelöscht werden, ist ein persistenter State wichtig, damit Terraform zuverlässig weiterarbeiten kann.
 
-In diesem Repo gibt es dafür einen **Bootstrap-Stack** unter `bootstrap/`, der einen S3 Bucket (und optional eine DynamoDB-Tabelle für Locks) erstellt.
+In diesem Repo gibt es dafür einen **Bootstrap-Stack** unter `bootstrap/`, der einen S3 Bucket erstellt.
 
 1.  Einmalig lokal bootstrap ausführen:
 
@@ -54,16 +74,22 @@ In diesem Repo gibt es dafür einen **Bootstrap-Stack** unter `bootstrap/`, der 
 
 		```bash
 		terraform init \
+			-backend=false
+		```
+
+		Später Migration auf S3:
+
+		```bash
+		terraform init \
+			-migrate-state \
 			-backend-config="bucket=<DEIN_BUCKET>" \
 			-backend-config="key=state/main/terraform.tfstate" \
-			-backend-config="region=us-east-1" \
-			-backend-config="dynamodb_table=<DEIN_LOCK_TABLE>"
+			-backend-config="region=us-east-1"
 		```
 
 Für GitHub Actions werden folgende Secrets verwendet:
 
 *   `TF_STATE_BUCKET` (Name des S3 Buckets)
-*   `TF_LOCK_TABLE` (optional, DynamoDB Tabelle für State Locks)
 *   optionaler Input `state_key` beim manuellen Starten des Apply-Workflows (Default: `state/<branch>/terraform.tfstate`)
 
 Ohne `TF_STATE_BUCKET` kann Terraform in GitHub Actions den State nicht persistent halten.

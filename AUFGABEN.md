@@ -51,12 +51,14 @@ set AWS_SECRET_ACCESS_KEY=<DEIN_SECRET>
 Wechsle im Terminal in das Projektverzeichnis und führe aus:
 
 ```bash
-terraform init
+terraform init -backend=false
 ```
 Dies lädt den "AWS Provider" herunter. Ein Ordner `.terraform` wird erstellt.
 
-**Hinweis (Remote State via S3 Backend):**
-Wenn du den State in S3 ablegen willst (für CI/CD empfohlen), musst du zuerst den Bootstrap-Stack ausführen und danach das Backend beim Init konfigurieren.
+Mit `-backend=false` arbeitet Terraform lokal mit der Datei `terraform.tfstate` im Projektordner.
+
+**Hinweis (späterer Remote State via S3 Backend):**
+Wenn du den State später in S3 ablegen willst (für CI/CD empfohlen), führst du zuerst den Bootstrap-Stack aus und migrierst danach den lokalen State.
 
 ```bash
 cd bootstrap
@@ -65,11 +67,13 @@ terraform apply
 
 cd ..
 terraform init \
+    -migrate-state \
     -backend-config="bucket=<DEIN_BUCKET>" \
     -backend-config="key=state/main/terraform.tfstate" \
-    -backend-config="region=us-east-1" \
-    -backend-config="dynamodb_table=<DEIN_LOCK_TABLE>"
+    -backend-config="region=us-east-1"
 ```
+
+Damit wird dein bestehender lokaler State in den S3 Bucket verschoben.
 
 ## Aufgabe 3: Variablen nutzen (terraform.tfvars)
 
