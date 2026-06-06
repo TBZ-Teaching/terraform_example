@@ -63,7 +63,7 @@ Durch die Zerlegung des komplexen Themas "Infrastructure as Code" in kleine Einh
     *   Kurz die Precedence zeigen (CLI > File > Env > Default).
 
 ### U - Üben (Elaboration & Transfer)
-*   **Aufgaben (aus AUFGABEN.md)**:
+*   **Aufgaben (aus terraform/AUFGABEN.md)**:
     *   Fokus auf **Aufgabe 3 & 4**.
     *   Wir nutzen die **`terraform.tfvars`** Datei als Best Practice.
     *   Teilnehmer passen **Instanz-Namen** und **Port** an (Erfolgskontrolle: Individuelle URL).

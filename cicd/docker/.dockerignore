@@ -1,0 +1,10 @@
+.git
+.github
+.terraform
+bootstrap/.terraform
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+awscliv2.zip
+*.pptx
+*.pdf

@@ -3,7 +3,7 @@
 Willkommen zum praktischen Teil. In diesem Abschnitt wirst du einen echten Webserver in der AWS Cloud deployen und dabei lernen, wie man Terraform-Variablen nutzt.
 
 ## Vorbereitung
-Stelle sicher, dass du die Installation gemäss [SETUP_GUIDE.md](SETUP_GUIDE.md) abgeschlossen hast.
+Stelle sicher, dass du die Installation gemäss [../SETUP_GUIDE.md](../SETUP_GUIDE.md) abgeschlossen hast.
 
 ## Aufgabe 1: Authentifizierung einrichten
 
@@ -51,6 +51,7 @@ set AWS_SECRET_ACCESS_KEY=<DEIN_SECRET>
 Wechsle im Terminal in das Projektverzeichnis und führe aus:
 
 ```bash
+cd terraform
 terraform init -backend=false
 ```
 Dies lädt den "AWS Provider" herunter. Ein Ordner `.terraform` wird erstellt.
@@ -61,7 +62,7 @@ Mit `-backend=false` arbeitet Terraform lokal mit der Datei `terraform.tfstate` 
 Wenn du den State später in S3 ablegen willst (für CI/CD empfohlen), führst du zuerst den Bootstrap-Stack aus und migrierst danach den lokalen State.
 
 ```bash
-cd bootstrap
+cd terraform/bootstrap
 terraform init
 terraform apply
 
@@ -178,3 +179,7 @@ terraform destroy
 Bestätige mit `yes`. 
 
 **Fertig!** Du hast erfolgreich Infrastructure as Code betrieben.
+
+## Wichtiger Hinweis zur Ordnerstruktur
+
+Alle Terraform Befehle in diesem Blatt werden im Ordner `terraform/` ausgeführt.

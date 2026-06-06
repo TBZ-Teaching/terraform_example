@@ -3,17 +3,19 @@
 Dies ist ein Beispiel-Projekt für das Modul **Infrastructure as Code**. Es zeigt, wie man mit Terraform einen einfachen Webserver auf AWS bereitstellt und dabei Variablen flexibel einsetzt.
 
 ## Inhalt
-*   `main.tf`: Die Hauptkonfiguration (Provider & Ressourcen).
-*   `vars.tf`: Definition der Eingabevariablen.
-*   `outputs.tf`: Definition der Ausgabewerte (z.B. IP-Adresse).
-*   `AUFGABEN.md`: **Starte hier!** Die Schritt-für-Schritt Anleitung.
+*   `terraform/`: Terraform Root-Modul (Hauptkonfiguration).
+*   `terraform/bootstrap/`: Bootstrap Stack für S3 Backend.
+*   `.gitlab-ci.yml`: GitLab Pipeline Definition (im Root).
+*   `cicd/docker/`: Dockerfile und `.dockerignore`.
+*   `terraform/AUFGABEN.md`: **Starte hier!** Die Terraform-Schritt-für-Schritt Anleitung.
+*   `cicd/AUFGABEN_CICD.md`: CI/CD Aufgabenblatt (GitLab + Docker Registry).
 *   `SETUP_GUIDE.md`: Installationsanleitung für alle Tools.
-*   `lektionplan_IaC.md`: Didaktisches Konzept für Dozenten (inkl. **45-Minuten-Version**).
 
 ## Schnellstart
 
 1.  Installiere die Tools gemäss [SETUP_GUIDE.md](SETUP_GUIDE.md).
-2.  Folge den Aufgaben in [AUFGABEN.md](AUFGABEN.md). *Optional: Für den 45-Min-Schnelldurchlauf siehe Hinweise dort.*
+2.  Folge den Aufgaben in [terraform/AUFGABEN.md](terraform/AUFGABEN.md). *Optional: Für den 45-Min-Schnelldurchlauf siehe Hinweise dort.*
+3.  Vertiefe mit [cicd/AUFGABEN_CICD.md](cicd/AUFGABEN_CICD.md) die Pipeline-Themen aus Aufgabe 8.
 
 ## Voraussetzungen
 *   Terraform >= 1.2.0
@@ -24,14 +26,16 @@ Dies ist ein Beispiel-Projekt für das Modul **Infrastructure as Code**. Es zeig
 Dieses Projekt kann zuerst mit lokalem State verwendet werden:
 
 ```bash
+cd terraform
 terraform init -backend=false
 ```
 
 Danach arbeitet Terraform mit `terraform.tfstate` im Projektordner.
 
-Sobald dein S3 Bucket vorhanden ist (z.B. via `bootstrap/`), kannst du den lokalen State nach S3 migrieren:
+Sobald dein S3 Bucket vorhanden ist (z.B. via `terraform/bootstrap/`), kannst du den lokalen State nach S3 migrieren:
 
 ```bash
+cd terraform
 terraform init \
 	-migrate-state \
 	-backend-config="bucket=<DEIN_BUCKET>" \
@@ -39,47 +43,45 @@ terraform init \
 	-backend-config="region=us-east-1"
 ```
 
-## GitHub Actions (Terraform Plan/Apply)
+## GitLab CI/CD (Terraform + Docker)
 
-Dieses Repo enthält GitHub Workflows für:
+Dieses Repo nutzt GitLab CI/CD über die Datei `.gitlab-ci.yml` im Root.
 
-*   **terraform-plan**: läuft automatisch bei Pull Requests (und Push auf `main`) und macht `fmt`, `init`, `validate`, `plan`.
-	*   Hinweis: Der Plan läuft mit `-refresh=false`, damit er **keine AWS Credentials** braucht.
-*   **terraform-apply**: **manuell** auslösbar (Workflow Dispatch) und führt `plan` + `apply` aus.
+Pipeline-Verhalten:
 
-### Benötigte Secrets
+*   **terraform-plan**: läuft automatisch auf Branches und Merge Requests.
+*   **docker-build-push**: läuft automatisch auf `main` und pusht in die GitLab Registry.
+*   **terraform-apply**: manuell auf `main`.
+*   **terraform-destroy**: manuell auf `main`.
 
-Lege in GitHub unter **Settings → Secrets and variables → Actions → Secrets** folgende Secrets an:
+### Benötigte Variablen in GitLab
+
+Lege in GitLab unter **Settings -> CI/CD -> Variables** folgende Variablen an:
 
 *   `AWS_ACCESS_KEY_ID`
 *   `AWS_SECRET_ACCESS_KEY`
-*   `AWS_SESSION_TOKEN` (optional, z.B. AWS Academy)
-*   `AWS_REGION` (optional, Default ist `us-east-1`)
+*   `AWS_SESSION_TOKEN`
+
+Der Name des S3 Buckets wird direkt in `.gitlab-ci.yml` über `TF_STATE_BUCKET` gesetzt.
 
 ### Empfohlen: State in S3 persistieren (mit Bootstrap)
 
-Da GitHub Runner nach dem Job gelöscht werden, ist ein persistenter State wichtig, damit Terraform zuverlässig weiterarbeiten kann.
+Da GitLab Runner nach dem Job gelöscht werden, ist ein persistenter State wichtig, damit Terraform zuverlässig weiterarbeiten kann.
 
-In diesem Repo gibt es dafür einen **Bootstrap-Stack** unter `bootstrap/`, der einen S3 Bucket erstellt.
+In diesem Repo gibt es dafür einen **Bootstrap-Stack** unter `terraform/bootstrap/`, der einen S3 Bucket erstellt.
 
 1.  Einmalig lokal bootstrap ausführen:
 
 		```bash
-		cd bootstrap
+		cd terraform/bootstrap
 		terraform init
 		terraform apply
 		```
 
-2.  Danach im Root-Verzeichnis das S3 Backend nutzen (GitHub Actions macht das automatisch, lokal geht z.B. so):
+2.  Danach den State im Hauptstack auf S3 migrieren:
 
 		```bash
-		terraform init \
-			-backend=false
-		```
-
-		Später Migration auf S3:
-
-		```bash
+		cd ../
 		terraform init \
 			-migrate-state \
 			-backend-config="bucket=<DEIN_BUCKET>" \
@@ -87,11 +89,6 @@ In diesem Repo gibt es dafür einen **Bootstrap-Stack** unter `bootstrap/`, der 
 			-backend-config="region=us-east-1"
 		```
 
-Für GitHub Actions werden folgende Secrets verwendet:
-
-*   `TF_STATE_BUCKET` (Name des S3 Buckets)
-*   optionaler Input `state_key` beim manuellen Starten des Apply-Workflows (Default: `state/<branch>/terraform.tfstate`)
-
-Ohne `TF_STATE_BUCKET` kann Terraform in GitHub Actions den State nicht persistent halten.
+Wenn `TF_STATE_BUCKET` in `.gitlab-ci.yml` nicht korrekt gesetzt ist, kann Terraform in GitLab CI/CD den State nicht persistent halten.
 
 Viel Erfolg!
